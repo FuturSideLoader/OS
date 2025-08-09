@@ -4,19 +4,16 @@ default rel
 section .text
 global keyboard_handler
 extern scancode_map
+extern scancode_map_shift
 extern keyboard_buffer_push
-
-; Variables externes pour état des touches shift/ctrl si besoin
 extern shift_pressed
 extern ctrl_pressed
 extern alt_pressed
 
-; Interrupt handler clavier
 keyboard_handler:
     push rbp
     mov rbp, rsp
 
-    ; Sauvegarder registres utilisés
     push rax
     push rbx
     push rcx
@@ -24,47 +21,85 @@ keyboard_handler:
     push rsi
     push rdi
 
-    ; Lire le scancode du port 0x60
+    ; Lire le scancode
     in al, 0x60
-    movzx rsi, al          ; rsi = scancode
+    movzx rsi, al
 
-    ; Vérifier si scancode < taille table (0x5E ici)
+    ; Gérer appuis / relâchement Shift gauche (0x2A) et droit (0x36)
+    cmp rsi, 0x2A
+    je .shift_down
+    cmp rsi, 0x36
+    je .shift_down
+    cmp rsi, 0xAA
+    je .shift_up
+    cmp rsi, 0xB6
+    je .shift_up
+
+    ; Gérer Ctrl gauche (0x1D) press / release
+    cmp rsi, 0x1D
+    je .ctrl_down
+    cmp rsi, 0x9D
+    je .ctrl_up
+
+    ; Gérer Alt gauche (0x38) press / release
+    cmp rsi, 0x38
+    je .alt_down
+    cmp rsi, 0xB8
+    je .alt_up
+
+    ; Filtrer si scancode > table
     cmp rsi, 0x5E
-    ja .no_key             ; si au-delà, aucune action
+    ja .end_interrupt
 
-    ; Récupérer le pointeur sur scancode_map (table char en C)
+    ; Choisir table selon Shift
     mov rdi, scancode_map
+    cmp dword [shift_pressed], 0
+    je .map_chosen
+    mov rdi, scancode_map_shift
 
-    ; Charger le caractère correspondant : scancode_map[scancode]
+.map_chosen:
     movzx rbx, byte [rdi + rsi]
-
-    ; Si caractère nul (0), ne rien faire
     cmp bl, 0
-    je .no_key
+    je .end_interrupt
 
-    ; Appeler keyboard_buffer_push(caractère)
-    movzx edi, bl          ; caractère dans edi (int/char)
+    movzx edi, bl
     call keyboard_buffer_push
 
-.no_key:
-    ; Lire le port 0x61 pour reset du contrôleur clavier (non obligatoire)
-    in al, 0x61
-    or al, 0x80
-    out 0x61, al
-    and al, 0x7F
-    out 0x61, al
-
-    ; Signal EOI au PIC (important !)
+.end_interrupt:
     mov al, 0x20
     out 0x20, al
+    jmp .restore
 
-    ; Restaurer registres
+.shift_down:
+    mov dword [shift_pressed], 1
+    jmp .end_interrupt
+
+.shift_up:
+    mov dword [shift_pressed], 0
+    jmp .end_interrupt
+
+.ctrl_down:
+    mov dword [ctrl_pressed], 1
+    jmp .end_interrupt
+
+.ctrl_up:
+    mov dword [ctrl_pressed], 0
+    jmp .end_interrupt
+
+.alt_down:
+    mov dword [alt_pressed], 1
+    jmp .end_interrupt
+
+.alt_up:
+    mov dword [alt_pressed], 0
+    jmp .end_interrupt
+
+.restore:
     pop rdi
     pop rsi
     pop rdx
     pop rcx
     pop rbx
     pop rax
-
     leave
     iretq
