@@ -1,59 +1,44 @@
-# Assembleur NASM
-ASM=nasm
-ASMFLAGS=-f elf64
+AS = nasm
+CC = gcc
+LD = ld
 
-# Compilateur GCC
-CC=gcc
-CFLAGS=-m64 -ffreestanding -nostdlib -nostartfiles -c
+ASFLAGS = -f elf64
+CFLAGS = -m64 -ffreestanding -nostdlib -nostartfiles -Wall -Wextra -c
 
-# Linker
-LD=ld
-LDFLAGS=-T linker.ld
+OBJS = boot.o load_idt.o keyboard.o vga.o idt.o scancode.o terminal.o kernel.o
 
-# Fichiers sources
-ASM_SRC=boot.asm load_idt.asm keyboard.asm
-C_SRC=kernel.c vga.c idt.c keyboard_init.c scancode.c
+all: myos.iso
 
-# Objets
-OBJ=$(ASM_SRC:.asm=.o) $(C_SRC:.c=.o)
-
-# Nom binaire final
-TARGET=myos.elf
-
-# Règles
-
-all: $(TARGET) iso myos.iso
-
-$(TARGET): $(OBJ)
-	$(LD) $(LDFLAGS) -o $@ $^
-
-# Règle explicite pour boot.o
 boot.o: boot.asm
-	$(ASM) $(ASMFLAGS) $< -o $@
+	$(AS) $(ASFLAGS) boot.asm -o boot.o
 
-# Règle explicite pour les autres ASM (évite conflit ou erreur)
 load_idt.o: load_idt.asm
-	$(ASM) $(ASMFLAGS) $< -o $@
+	$(AS) $(ASFLAGS) load_idt.asm -o load_idt.o
 
 keyboard.o: keyboard.asm
-	$(ASM) $(ASMFLAGS) $< -o $@
+	$(AS) $(ASFLAGS) keyboard.asm -o keyboard.o
 
-# Règle pour les fichiers C
 %.o: %.c
 	$(CC) $(CFLAGS) $< -o $@
 
-iso:
-	mkdir -p iso/boot/grub
-	cp $(TARGET) iso/boot/
-	cp grub.cfg iso/boot/grub/
+myos.elf: $(OBJS)
+	$(LD) -n -o myos.elf -Ttext 0x1000 $(OBJS) --oformat elf64-x86-64
 
-myos.iso: iso
+iso: myos.elf
+	mkdir -p iso/boot/grub
+	cp myos.elf iso/boot/myos.elf
+	echo 'set timeout=0' > iso/boot/grub/grub.cfg
+	echo 'set default=0' >> iso/boot/grub/grub.cfg
+	echo 'menuentry "MyOS" {' >> iso/boot/grub/grub.cfg
+	echo '  multiboot2 /boot/myos.elf' >> iso/boot/grub/grub.cfg
+	echo '  boot' >> iso/boot/grub/grub.cfg
+	echo '}' >> iso/boot/grub/grub.cfg
 	grub-mkrescue -o myos.iso iso
 
+myos.iso: iso
+
 run: myos.iso
-	qemu-system-x86_64 -cdrom myos.iso -m 512M -boot d
+	qemu-system-x86_64 -cdrom myos.iso
 
 clean:
-	rm -rf *.o $(TARGET) iso myos.iso
-
-.PHONY: all clean iso run
+	rm -rf *.o myos.elf iso myos.iso
