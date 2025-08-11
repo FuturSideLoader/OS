@@ -5,7 +5,8 @@ LD = ld
 ASFLAGS = -f elf64
 CFLAGS = -m64 -ffreestanding -nostdlib -nostartfiles -Wall -Wextra -c
 
-OBJS = boot.o load_idt.o keyboard.o vga.o idt.o scancode.o terminal.o kernel.o string.o
+# On distingue keyboard_init.o (C) et keyboard_asm.o (asm)
+OBJS = boot.o load_idt.o keyboard_init.o keyboard_asm.o vga.o idt.o scancode.o terminal.o kernel.o string.o
 
 all: myos.iso
 
@@ -15,8 +16,9 @@ boot.o: boot.asm
 load_idt.o: load_idt.asm
 	$(AS) $(ASFLAGS) load_idt.asm -o load_idt.o
 
-keyboard.o: keyboard.asm
-	$(AS) $(ASFLAGS) keyboard.asm -o keyboard.o
+# keyboard.asm compilé en keyboard_asm.o
+keyboard_asm.o: keyboard.asm
+	$(AS) $(ASFLAGS) keyboard.asm -o keyboard_asm.o
 
 %.o: %.c
 	$(CC) $(CFLAGS) $< -o $@
