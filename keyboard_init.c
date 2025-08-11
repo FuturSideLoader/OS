@@ -13,7 +13,7 @@ static char keyboard_buffer[KEYBOARD_BUFFER_SIZE];
 static volatile uint16_t buffer_head = 0;
 static volatile uint16_t buffer_tail = 0;
 
-void keyboard_buffer_push(char c) {
+inline void keyboard_buffer_push(char c) {
     uint16_t next = (buffer_head + 1) % KEYBOARD_BUFFER_SIZE;
     if(next != buffer_tail) { // espace dispo dans buffer
         keyboard_buffer[buffer_head] = c;
@@ -21,11 +21,11 @@ void keyboard_buffer_push(char c) {
     }
 }
 
-int keyboard_buffer_has_char(void) {
+inline int keyboard_buffer_has_char(void) {
     return buffer_head != buffer_tail;
 }
 
-int keyboard_buffer_read_char(void) {
+inline int keyboard_buffer_read_char(void) {
     if(buffer_head == buffer_tail) return -1;
     char c = keyboard_buffer[buffer_tail];
     buffer_tail = (buffer_tail + 1) % KEYBOARD_BUFFER_SIZE;

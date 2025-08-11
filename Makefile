@@ -5,7 +5,7 @@ LD = ld
 ASFLAGS = -f elf64
 CFLAGS = -m64 -ffreestanding -nostdlib -nostartfiles -Wall -Wextra -c
 
-OBJS = boot.o load_idt.o keyboard.o vga.o idt.o scancode.o terminal.o kernel.o
+OBJS = boot.o load_idt.o keyboard.o vga.o idt.o scancode.o terminal.o kernel.o string.o
 
 all: myos.iso
 
