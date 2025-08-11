@@ -29,12 +29,18 @@ void vga_print(const char* str) {
         if (*str == '\n') {
             cursor_col = 0;
             cursor_row++;
+            if (cursor_row >= VGA_HEIGHT) {
+                vga_scroll();
+            }
         } else {
             VGA_MEMORY[cursor_row * VGA_WIDTH + cursor_col] = vga_entry(*str, color);
             cursor_col++;
             if (cursor_col >= VGA_WIDTH) {
                 cursor_col = 0;
                 cursor_row++;
+                if (cursor_row >= VGA_HEIGHT) {
+                    vga_scroll();
+                }
             }
         }
         str++;
@@ -67,4 +73,32 @@ void print_space(void) {
             cursor_row = 0;  // Ou implémenter scroll si besoin
         }
     }
+}
+
+void vga_backspace(void) {
+    if (cursor_col == 0 && cursor_row == 0) {
+        return;
+    }
+
+    if (cursor_col == 0) {
+        cursor_row--;
+        cursor_col = VGA_WIDTH - 1;
+    } else {
+        cursor_col--;
+    }
+
+    VGA_MEMORY[cursor_row * VGA_WIDTH + cursor_col] = vga_entry(' ', color);
+}
+
+void vga_scroll() {
+    for (size_t y = 1; y < VGA_HEIGHT; y++) {
+        for (size_t x = 0; x < VGA_WIDTH; x++) {
+            VGA_MEMORY[(y-1) * VGA_WIDTH + x] = VGA_MEMORY[y * VGA_WIDTH + x];
+        }
+    }
+
+    for (size_t x = 0; x < VGA_WIDTH; x++) {
+        VGA_MEMORY[(VGA_HEIGHT-1) * VGA_WIDTH + x] = vga_entry(' ', color);
+    }
+    if (cursor_row > 0) cursor_row--;
 }

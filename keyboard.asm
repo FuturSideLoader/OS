@@ -26,6 +26,7 @@ keyboard_handler:
 
     ; Lire le scancode
     in al, 0x60
+    mov [scancode], al         ; <-- AJOUTÉ : stocker le scancode lu
     movzx rsi, al
 
     ; Gérer appuis / relâchement Shift gauche (0x2A) et droit (0x36)
@@ -53,12 +54,14 @@ keyboard_handler:
     ; Gérer la touche espace
     cmp byte [scancode], 0x39
     je .call_handle_space
-    cmp byte [scancode], 0xB9
-    jne .coninue
-    .call_handle_space:
+    jmp .no_space
+
+.call_handle_space:
     call handle_space
     jmp .end_interrupt
 
+.no_space:
+    ; continuer le traitement normal (rien à faire ici, on tombe dans la suite)
 
     ; Filtrer si scancode > table
     cmp rsi, 0x5E

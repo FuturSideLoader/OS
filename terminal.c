@@ -56,7 +56,7 @@ void terminal_handle_char(char c) {
     else if (c == '\b') {
         if (input_length > 0) {
             input_length--;
-            vga_putc('\b');
+            vga_backspace();
         }
     }
     else if (input_length < TERMINAL_MAX_INPUT - 1) {
