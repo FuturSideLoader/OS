@@ -12,5 +12,6 @@ void vga_print(const char* str);
 void vga_print_at(const char* str, size_t col, size_t row);
 void vga_puts(const char* str);
 void vga_putc(char c);
+void print_space(void);
 
 #endif

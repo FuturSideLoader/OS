@@ -55,3 +55,16 @@ void vga_print_at(const char* str, size_t col, size_t row) {
     cursor_row = row;
     vga_print(str);
 }
+
+void print_space(void) {
+    // Affiche un espace à la position actuelle du curseur
+    VGA_MEMORY[cursor_row * VGA_WIDTH + cursor_col] = vga_entry(' ', color);
+    cursor_col++;
+    if (cursor_col >= VGA_WIDTH) {
+        cursor_col = 0;
+        cursor_row++;
+        if (cursor_row >= VGA_HEIGHT) {
+            cursor_row = 0;  // Ou implémenter scroll si besoin
+        }
+    }
+}

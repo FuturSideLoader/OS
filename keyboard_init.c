@@ -6,6 +6,7 @@ volatile uint8_t shift_pressed = 0;
 volatile uint8_t ctrl_pressed = 0;
 volatile uint8_t alt_pressed = 0;
 volatile uint8_t capslock_on = 0;
+uint8_t scancode = 0;
 
 #define KEYBOARD_BUFFER_SIZE 256
 
@@ -47,4 +48,8 @@ void keyboard_init(void) {
 
     // Activer interruption clavier (IRQ1)
     vga_print("Keyboard initialized.\n");
+}
+
+void handle_space(void) {
+    print_space();
 }

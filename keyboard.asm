@@ -9,6 +9,9 @@ extern keyboard_buffer_push
 extern shift_pressed
 extern ctrl_pressed
 extern alt_pressed
+extern scancode
+extern handle_space
+extern print_space
 
 keyboard_handler:
     push rbp
@@ -46,6 +49,16 @@ keyboard_handler:
     je .alt_down
     cmp rsi, 0xB8
     je .alt_up
+
+    ; Gérer la touche espace
+    cmp byte [scancode], 0x39
+    je .call_handle_space
+    cmp byte [scancode], 0xB9
+    jne .coninue
+    .call_handle_space:
+    call handle_space
+    jmp .end_interrupt
+
 
     ; Filtrer si scancode > table
     cmp rsi, 0x5E
@@ -93,6 +106,9 @@ keyboard_handler:
 .alt_up:
     mov dword [alt_pressed], 0
     jmp .end_interrupt
+
+.handle_space:
+    call print_space
 
 .restore:
     pop rdi
